@@ -7,15 +7,15 @@ CANVAS_HEIGHT = 600
 DEFAULT_FONT = ("Purisa", 12)  # Can't reset the default font in tkinter, so we use this for our text
 
 # Constants for the game
-BUTTON_SIZE = 24        # Length and width of each button in the numpad
-MAX_GUESSES = 8         # Maximum number of guesses allowed
+BUTTON_SIZE = 24      # Length and width of each button in the numpad
+MAX_GUESSES = 8       # Maximum number of guesses allowed
 
-numpad_btns = []        # List to hold the buttons for the digits 0 - 9
+numpad_btns = []      # List to hold the buttons for the digits 0 - 9
+guess_grid = []       # List to hold the grid for the guesses.  We will change rectangle colors to indicate correctness
 
-guesses = []
-num_guesses = 0
+current_guess = []
+num_attempts = 0
 code = []
-slot_squares = []
 
 app = tk.Tk()
 app.title("Mastermind")
@@ -66,50 +66,49 @@ def create_code():
         if not digit in code:
             code.append(digit)
 
-def draw_guess_squares():
-    bx1 = 180
-    by1 = 220 + num_guesses * 30
-    for i in range(0,4):  
-        bx2 = bx1 + BUTTON_SIZE
-        by2 = by1 + BUTTON_SIZE
-        slot_squares.append(canvas.create_rectangle(bx1, by1, bx2, by2, outline="black", fill="white", tags="slot"))
-        bx1 = bx2 + 10
+def draw_guess_grid():
+     for row in range(0, MAX_GUESSES):
+        bx1 = 180
+        by1 = 220 + row * 30
+        for i in range(0,4):  
+            bx2 = bx1 + BUTTON_SIZE
+            by2 = by1 + BUTTON_SIZE
+            guess_grid.append(canvas.create_rectangle(bx1, by1, bx2, by2, outline="black", fill="white"))
+            bx1 = bx2 + 10
 
 def draw_guesses():
     bx1 = 180
-    by1 = 220 + num_guesses * 30
+    by1 = 220 + num_attempts * 30
 
-    for s in range(0, len(guesses)):
-        canvas.create_text(bx1 + BUTTON_SIZE/2, by1 + BUTTON_SIZE/2, text=str(guesses[s]), font=DEFAULT_FONT, anchor="center")
+    for s in range(0, len(current_guess)):
+        canvas.create_text(bx1 + BUTTON_SIZE/2, by1 + BUTTON_SIZE/2, text=str(current_guess[s]), font=DEFAULT_FONT, anchor="center", tags="guess")
         bx1 = bx1 + BUTTON_SIZE + 10
 
 def process_guess(slots):
-    global num_guesses  
+    global num_attempts  
 
     # compare the 4 guesses in slots to the 4 items in code
     num_correct = 0
     for s in range(0, len(slots)):
         if slots[s] == code[s]:
             num_correct += 1
-            canvas.itemconfig(slot_squares[s], fill='lightgreen')
+            canvas.itemconfig(guess_grid[s], fill='lightgreen')
             canvas.itemconfig(numpad_btns[slots[s]], fill='lightgreen')
         elif slots[s] in code:
-             canvas.itemconfig(slot_squares[s], fill='yellow') 
+             canvas.itemconfig(guess_grid[s], fill='yellow') 
              canvas.itemconfig(numpad_btns[slots[s]], fill='yellow')    
         else:
-              canvas.itemconfig(slot_squares[s], fill='grey')
+              canvas.itemconfig(guess_grid[s], fill='grey')
               canvas.itemconfig(numpad_btns[slots[s]], fill='grey')
 
     if (num_correct == 4):
         xt1 = 180 + 4 * BUTTON_SIZE + 4 * 10 + 20
-        yt1 = 220 + num_guesses * 30
+        yt1 = 220 + num_attempts * 30
         canvas.create_text(xt1, yt1, text="You win!", font=DEFAULT_FONT, anchor="nw")
     else:
-        num_guesses = num_guesses + 1 
-        guesses.clear()
-        slot_squares.clear()
-        draw_guess_squares()
-                   
+        num_attempts = num_attempts + 1 
+        current_guess.clear()
+                    
 # Get the number that was clicked on and save it in the next guess slot.
 # Gray out the button that was clicked.
 # After 4 numbers have been selected, see if the user guessed correctly
@@ -118,25 +117,28 @@ def on_button_click(event):
     digit = int(tag[3])  # strip off prefix 'tag'
     canvas.itemconfig(numpad_btns[digit], fill='lightgray')
 
-    if (len(guesses) < 4):
-        guesses.append(digit)
+    if (len(current_guess) < 4):
+        current_guess.append(digit)
         draw_guesses()
-    if len(guesses) == 4:
-        process_guess(guesses) 
+    if len(current_guess) == 4:
+        process_guess(current_guess) 
 
 def play_game():
     create_code()
     clear_numpad()
-#    canvas.delete("slot")  # clear the guess squares
-    draw_guess_squares() 
+ 
+def play_game_test():
+    canvas.delete("guess")
 
 def main():
     canvas.pack()
- #   my_button = tk.Button(app, text="Play Again!", command=play_game, font=DEFAULT_FONT, width=10, height=2)
- #   canvas.create_window(400, 550, window=my_button) 
+    my_button = tk.Button(app, text="Play Again!", command=play_game_test, font=DEFAULT_FONT, width=10, height=2)
+    canvas.create_window(400, 550, window=my_button) 
 
     draw_instructions()
     draw_numpad() 
+    draw_guess_grid() 
+
     play_game()
 
     app.mainloop()
