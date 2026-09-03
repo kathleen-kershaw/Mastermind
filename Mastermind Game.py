@@ -16,7 +16,7 @@ FEEDBACK = ["Try again", "Good start!", "Keep going!", "So close!", "You win!"] 
 
 numpad_btns = []      # List to hold the buttons for the digits 0 - 9
 current_guess = []    # The current guess being built by the user, a list of 4 digits 
-num_attempts = 0      # Number of attempts made by the user
+attempt_num = 0      # Number of attempts made by the user
 code = []             # The code to be guessed, a list of 4 unique digits
 
 # List to hold the grid for the guesses.  We will change rectangle colors to indicate correctness
@@ -69,8 +69,8 @@ def clear_numpad():
 
 # Clear the guess grid and reset the number of attempts
 def clear_guess_grid():
-    global num_attempts
-    num_attempts = 0  # Reset the number of attempts
+    global attempt_num
+    attempt_num = 0  # Reset the number of attempts
     for row in range(0, MAX_GUESSES):
         for col in range(0, 4):
             canvas.itemconfig(guess_grid[row][col], fill='white')
@@ -85,6 +85,7 @@ def create_code():
         digit = random.randint(0,9)
         if not digit in code:
             code.append(digit)
+#    print(code)  # Uncomment this line to see the code in the console for testing purposes
 
 # Draw the grid for the guesses
 def draw_guess_grid():
@@ -100,38 +101,39 @@ def draw_guess_grid():
 # Draw a digit in the specified slot position in the guess grid
 def draw_digit(slot_position, digit):
     dx = GRID_X0 + BUTTON_SIZE/2 + (BUTTON_SIZE + GRID_SPACING) * slot_position
-    dy = GRID_Y0 + num_attempts * 30
+    dy = GRID_Y0 + attempt_num * 30
 
     canvas.create_text(dx, dy + BUTTON_SIZE/2, text=str(digit), font=DEFAULT_FONT, anchor="center", tags="guess")
 
 # Compare the 4 guesses in slots to the 4 items in code and provide feedback.
 def process_guess(slots):
-    global num_attempts  
+    global attempt_num  
 
     num_correct = 0
     for s in range(0, len(slots)):
         if slots[s] == code[s]:
             num_correct += 1
-            canvas.itemconfig(guess_grid[num_attempts][s], fill='lightgreen')
+            canvas.itemconfig(guess_grid[attempt_num][s], fill='lightgreen')
             canvas.itemconfig(numpad_btns[slots[s]], fill='lightgreen')
         elif slots[s] in code:
-             canvas.itemconfig(guess_grid[num_attempts][s], fill='yellow') 
+             canvas.itemconfig(guess_grid[attempt_num][s], fill='yellow') 
              canvas.itemconfig(numpad_btns[slots[s]], fill='yellow')    
         else:
-              canvas.itemconfig(guess_grid[num_attempts][s], fill='grey')
+              canvas.itemconfig(guess_grid[attempt_num][s], fill='grey')
               canvas.itemconfig(numpad_btns[slots[s]], fill='grey')
 
     # Location for feedback text
     xt1 = GRID_X0 + 4 * BUTTON_SIZE + 4 * 10 + 20
-    yt1 = GRID_Y0 + num_attempts * 30
+    yt1 = GRID_Y0 + attempt_num * 30
 
-    if num_attempts < MAX_GUESSES -1:
-        canvas.create_text(xt1, yt1, text=FEEDBACK[num_correct], font=DEFAULT_FONT, anchor="nw", tag="feedback")
+    if attempt_num <= MAX_GUESSES - 1:
+        attempt_feedback = canvas.create_text(xt1, yt1, text=FEEDBACK[num_correct], font=DEFAULT_FONT, anchor="nw", tag="feedback")
  
     if (num_correct < 4):
-        num_attempts = num_attempts + 1 
+        attempt_num = attempt_num + 1 
         current_guess.clear()
-        if (num_attempts >= MAX_GUESSES):
+        if (attempt_num == MAX_GUESSES):
+             canvas.delete(attempt_feedback)
              canvas.create_text(xt1, yt1, text="You lose! The code was: " + ''.join(map(str, code)), font=DEFAULT_FONT, anchor="nw", tag="feedback")
                     
 # User clicked on a button in the numpad
