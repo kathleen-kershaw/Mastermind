@@ -7,7 +7,7 @@ class Mastermind_Game:
     
         # Constants for the UI layout
         self.CANVAS_WIDTH = 600
-        self.CANVAS_HEIGHT = 600
+        self.CANVAS_HEIGHT = 650
         self.DEFAULT_FONT = ("Purisa", 12)  # Can't reset the default font in tkinter, so we use this for our text
         self.BUTTON_SIZE = 24      # Length and width of each button in the numpad
         self.MAX_GUESSES = 6       # Maximum number of guesses allowed
@@ -33,11 +33,12 @@ class Mastermind_Game:
 
         # Build UI elements
         self.my_button = tk.Button(self.app, text="Play Again!", command=self.play_game, font=self.DEFAULT_FONT, width=10, height=2)
-        self.canvas.create_window(250, 550, window=self.my_button) 
+        self.canvas.create_window(250, 530, window=self.my_button) 
 
         self.draw_instructions()
         self.draw_numpad() 
         self.draw_guess_grid() 
+        self.draw_footer()
 
         # Start the game
         self.play_game()        
@@ -61,8 +62,7 @@ class Mastermind_Game:
             self.canvas.create_text(xt0, yt1 + 70, text="Click on the keypad below to select your guess:", font=self.DEFAULT_FONT, anchor="nw")
             self.canvas.create_text(xt0, yt1 + 150, text="You have up to " + str(self.MAX_GUESSES) + " guesses:", font=self.DEFAULT_FONT, anchor="nw")
 
-        # Draw the numpad with buttons for digits 0-9
- 
+    # Draw the numpad with buttons for digits 0-9
     def draw_numpad(self):
             bx1 = 100
             by1 = 150
@@ -76,6 +76,28 @@ class Mastermind_Game:
                 self.canvas.create_text(bx1 + self.BUTTON_SIZE/2, by1 + self.BUTTON_SIZE/2, text=str(i), tags=tag, font=self.DEFAULT_FONT, anchor="center")
                 self.canvas.tag_bind(tag, '<Button-1>', self.on_button_click)
                 bx1 = bx2 + 20
+
+    # Draw the footer with links to Code in Place and LinkedIn
+    def draw_footer(self):
+        # Separator line
+        self.canvas.create_line(40, 600, 560, 600, fill="darkgray", width=1, tags="footer")
+        
+        # Left footer text (Stanford link)
+        stanford_link = self.canvas.create_text(40, 615, text="Stanford | Code in Place", font=("Purisa", 10), fill="#2b6cb0", anchor="nw")
+        self.canvas.tag_bind(stanford_link, '<Button-1>', lambda e: self.open_url("https://codeinplace.stanford.edu/cipx/intro"))
+        self.canvas.tag_bind(stanford_link, '<Enter>', lambda e: self.canvas.config(cursor="hand2"))
+        self.canvas.tag_bind(stanford_link, '<Leave>', lambda e: self.canvas.config(cursor=""))
+
+        # Right footer text (LinkedIn link)
+        linkedin_link = self.canvas.create_text(560, 615, text="Kathy Kershaw", font=("Purisa", 10), fill="#2b6cb0", anchor="ne")
+        self.canvas.tag_bind(linkedin_link, '<Button-1>', lambda e: self.open_url("https://linkedin.com/in/kathleenkershaw"))
+        self.canvas.tag_bind(linkedin_link, '<Enter>', lambda e: self.canvas.config(cursor="hand2"))
+        self.canvas.tag_bind(linkedin_link, '<Leave>', lambda e: self.canvas.config(cursor=""))
+
+    # Helper function to open URLs from tkinter
+    def open_url(self, url):
+        import webbrowser
+        webbrowser.open_new(url)
 
     # Set the backgrounds to white for the next game
     def clear_numpad(self):

@@ -1,8 +1,25 @@
 import streamlit as st
 from Mastermind_Engine import MastermindEngine
 
+# Reduce top whitespace/padding across the entire page
+st.markdown(
+    """
+    <style>
+    .block-container { padding-top: 1rem;}
+    </style>
+    """,
+    unsafe_allow_html=True  # Tell Streamlit to render custom HTML styling
+)
+
 st.title("Mastermind Web Edition v1.1")
-st.write("Guess the 4-digit code (each digit is unique, 0–9).")
+st.write("### Guess the 4-digit code. Each digit is unique, 0–9.")
+
+st.markdown(
+    "**How to read the feedback:**  \n"
+    "-    🟩 Green square:  Right number, correct position  \n"
+    "-    🟨 Yellow square: Right number, wrong position  \n"
+    "-    ⬜ Gray square:   Number is not in the code"
+    )
 
 # Initialize the game engine in session state
 if 'engine' not in st.session_state:
@@ -12,10 +29,16 @@ engine = st.session_state.engine
 
 # Game play area
 if not engine.game_over:
-    # Wrap the input and button in a form to enable "Enter to submit"
+
+    # Wrap the input and button in a form to enable hitting Enter to submit
     with st.form(key="guess_form", clear_on_submit=True):
-        raw_guess = st.text_input("Enter your 4-digit guess:", max_chars=4, key="guess_input")
-        submit_submitted = st.form_submit_button("Submit Guess")
+        # Create two columns: one for the shorter input, one for the button next to it
+        col1, col2 = st.columns([2, 1])  # Adjust these ratios if needed (e.g., [1, 1] or [3, 1])
+
+        with col1:
+            raw_guess = st.text_input("Enter your 4-digit guess:", max_chars=4, key="guess_input")
+        with col2:
+            submit_submitted = st.form_submit_button("Submit Guess")
         
         if submit_submitted:
             if len(raw_guess) == 4 and raw_guess.isdigit():
