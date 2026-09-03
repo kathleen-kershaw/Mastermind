@@ -53,8 +53,7 @@ class MastermindEngine:
                 else:
                     slot_results[i] = 'grey'
 
-        feedback_messages = ["Try again", "Good start!", "Keep going!", "So close!", "You win!"]
-        feedback_text = feedback_messages[num_correct]
+        feedback_text = self.FEEDBACK[num_correct]
 
         # Record attempt in history
         attempt_record = {
