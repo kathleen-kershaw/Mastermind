@@ -1,7 +1,7 @@
 import streamlit as st
 from Mastermind_Engine import MastermindEngine
 
-st.title("Mastermind Web Edition")
+st.title("Mastermind Web Edition v1.1")
 st.write("Guess the 4-digit code (each digit is unique, 0–9).")
 
 # Initialize the game engine in session state
@@ -12,15 +12,18 @@ engine = st.session_state.engine
 
 # Game play area
 if not engine.game_over:
-    raw_guess = st.text_input("Enter your 4-digit guess:", max_chars=4, key="guess_input")
-    
-    if st.button("Submit Guess"):
-        if len(raw_guess) == 4 and raw_guess.isdigit():
-            guess_list = [int(char) for char in raw_guess]
-            engine.submit_guess(guess_list)
-            st.rerun()
-        else:
-            st.error("Please enter exactly 4 numbers (e.g., 1234).")
+    # Wrap the input and button in a form to enable "Enter to submit"
+    with st.form(key="guess_form", clear_on_submit=True):
+        raw_guess = st.text_input("Enter your 4-digit guess:", max_chars=4, key="guess_input")
+        submit_submitted = st.form_submit_button("Submit Guess")
+        
+        if submit_submitted:
+            if len(raw_guess) == 4 and raw_guess.isdigit():
+                guess_list = [int(char) for char in raw_guess]
+                engine.submit_guess(guess_list)
+                st.rerun()
+            else:
+                st.error("Please enter exactly 4 numbers (e.g., 1234).")
 
 # Display past attempts history with detailed feedback
 if engine.history:
@@ -48,3 +51,21 @@ if engine.game_over:
     if st.button("Play Again!"):
         engine.reset_game()
         st.rerun()
+
+# Footer section separated by a horizontal divider
+st.markdown("---")
+footer_html = """
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: darkgray; padding-bottom: 20px;">
+    <div>
+        <a href="https://codeinplace.stanford.edu/cipx/intro" target="_blank" style="color: #2b6cb0; text-decoration: underline;">
+            Stanford | Code in Place
+        </a>
+    </div>
+    <div>
+        <a href="https://linkedin.com/in/kathleenkershaw" target="_blank" style="color: #2b6cb0; text-decoration: underline;">
+            Kathy Kershaw
+        </a>   
+    </div>
+</div>
+"""
+st.markdown(footer_html, unsafe_allow_html=True)
