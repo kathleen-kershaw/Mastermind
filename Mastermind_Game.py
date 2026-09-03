@@ -1,12 +1,11 @@
 import tkinter as tk
 from tkinter import Canvas
-import random
+from Mastermind_Engine import MastermindEngine  # Import the clean engine
 
 class Mastermind_Game:
-
     def __init__(self):
-
-        # Constants for the game
+    
+        # Constants for the UI layout
         self.CANVAS_WIDTH = 600
         self.CANVAS_HEIGHT = 600
         self.DEFAULT_FONT = ("Purisa", 12)  # Can't reset the default font in tkinter, so we use this for our text
@@ -15,19 +14,19 @@ class Mastermind_Game:
         self.GRID_X0 = 180         # x coordinate of the left edge of the guess grid
         self.GRID_Y0 = 220         # y coordinate of the top edge of the guess grid
         self.GRID_SPACING = 10     # Spacing between the rectangles in the guess grid
-        self.FEEDBACK = ["Try again", "Good start!", "Keep going!", "So close!", "You win!"]  # Feedback messages based on the number of correct digits
 
+        # Initialize the core game engine
+        self.engine = MastermindEngine()
+ 
         self.numpad_btns = []      # List to hold the buttons for the digits 0 - 9
         self.current_guess = []    # The current guess being built by the user, a list of 4 digits 
-        self.attempt_num = 0      # Number of attempts made by the user
-        self.code = []             # The code to be guessed, a list of 4 unique digits
 
-        # List to hold the grid for the guesses.  We will change rectangle colors to indicate correctness
-        self.guess_grid = [[0 for _ in range(4)] for _ in range(self.MAX_GUESSES)] 
+        # Grid for the guesses.  We will change rectangle colors to indicate correctness
+        self.guess_grid = [[0 for _ in range(4)] for _ in range(self.engine.MAX_GUESSES)] 
 
         # Setup main window
         self.app = tk.Tk()
-        self.app.title("Mastermind")
+        self.app.title("Mastermind Desktop v1.1")
 
         self.canvas = Canvas(self.app, width=self.CANVAS_WIDTH, height=self.CANVAS_HEIGHT)
         self.canvas.pack()
@@ -78,34 +77,21 @@ class Mastermind_Game:
                 self.canvas.tag_bind(tag, '<Button-1>', self.on_button_click)
                 bx1 = bx2 + 20
 
-        # Set the backgrounds to white for the next game
-
+    # Set the backgrounds to white for the next game
     def clear_numpad(self):
-        for i in range(10):
+        for i in range(10): # digits 0 - 9
                 self.canvas.itemconfig(self.numpad_btns[i], fill='white')
 
     # Clear the guess grid and reset the number of attempts
     def clear_guess_grid(self):
-            self.attempt_num = 0  # Reset the number of attempts
-            for row in range(0, self.MAX_GUESSES):
+            for row in range(0, self.engine.MAX_GUESSES):
                 for col in range(0, 4):
                     self.canvas.itemconfig(self.guess_grid[row][col], fill='white')
             self.current_guess.clear()
             self.canvas.delete("guess")     # Remove previous guesses from the canvas
             self.canvas.delete("feedback")  # Remove previous feedback from the canvas
 
-        # Create a new code of 4 unique digits for the user to guess   
-   
-    def create_code(self):
-            self.code.clear()
-            while len(self.code) < 4:
-                digit = random.randint(0,9)
-                if not digit in self.code:
-                    self.code.append(digit)
-        #    print(code)  # Uncomment this line to see the code in the console for testing purposes
-
-        # Draw the grid for the guesses
-
+    # Draw the grid for the guesses
     def draw_guess_grid(self):
         for row in range(0, self.MAX_GUESSES):
             bx1 = self.GRID_X0
@@ -117,45 +103,45 @@ class Mastermind_Game:
                 bx1 = bx2 + self.GRID_SPACING
 
     # Draw a digit in the specified slot position in the guess grid
-    def draw_digit(self, slot_position, digit):
+    def draw_digit(self, slot_position, digit, attempt_index):
         dx = self.GRID_X0 + self.BUTTON_SIZE/2 + (self.BUTTON_SIZE + self.GRID_SPACING) * slot_position
-        dy = self.GRID_Y0 + self.attempt_num * 30
+        dy = self.GRID_Y0 + attempt_index * 30
 
         self.canvas.create_text(dx, dy + self.BUTTON_SIZE/2, text=str(digit), font=self.DEFAULT_FONT, anchor="center", tags="guess")
 
     # Compare the 4 guesses in slots to the 4 items in code and provide feedback.
-    def process_guess(self, slots):
-        global attempt_num  
+    def process_guess(self, raw_guess_slots):
+        # Send guess to engine and get back the evaluation results
+        result = self.engine.submit_guess(raw_guess_slots)
+        if not result:
+            return
 
-        num_correct = 0
-        for s in range(0, len(slots)):
-            if slots[s] == self.code[s]:
-                num_correct += 1
-                self.canvas.itemconfig(self.guess_grid[self.attempt_num][s], fill='lightgreen')
-                self.canvas.itemconfig(self.numpad_btns[slots[s]], fill='lightgreen')
-            elif slots[s] in self.code:
-                self.canvas.itemconfig(self.guess_grid[self.attempt_num][s], fill='yellow') 
-                self.canvas.itemconfig(self.numpad_btns[slots[s]], fill='yellow')    
-            else:
-                self.canvas.itemconfig(self.guess_grid[self.attempt_num][s], fill='grey')
-                self.canvas.itemconfig(self.numpad_btns[slots[s]], fill='grey')
+        current_attempt = len(self.engine.history) - 1
+
+        # Update grid and numpad colors based on engine instructions
+        for s in range(4):
+            color = result['colors'][s]
+            digit = raw_guess_slots[s]
+            self.canvas.itemconfig(self.guess_grid[current_attempt][s], fill=color)
+            self.canvas.itemconfig(self.numpad_btns[digit], fill=color)
 
         # Location for feedback text
         xt1 = self.GRID_X0 + 4 * self.BUTTON_SIZE + 4 * 10 + 20
-        yt1 = self.GRID_Y0 + self.attempt_num * 30
+        yt1 = self.GRID_Y0 + current_attempt * 30
 
-        if self.attempt_num <= self.MAX_GUESSES - 1:
-            attempt_feedback = self.canvas.create_text(xt1, yt1, text=self.FEEDBACK[num_correct], font=self.DEFAULT_FONT, anchor="nw", tag="feedback")
-    
-        if (num_correct < 4):
-            self.attempt_num = self.attempt_num + 1 
-            self.current_guess.clear()
-            if (self.attempt_num == self.MAX_GUESSES):
-                self.canvas.delete(attempt_feedback)
-                self.canvas.create_text(xt1, yt1, text="You lose! The code was: " + ''.join(map(str, self.code)), font=self.DEFAULT_FONT, anchor="nw", tag="feedback")
+        # Display feedback text provided by engine
+        if not self.engine.game_over:
+            self.canvas.create_text(xt1, yt1, text=result['feedback'], font=self.DEFAULT_FONT, anchor="nw", tag="feedback")
+        else:
+            self.canvas.create_text(xt1, yt1, text=self.engine.message, font=self.DEFAULT_FONT, anchor="nw", tag="feedback")
+
+        self.current_guess.clear()
                             
     # User clicked on a button in the numpad
     def on_button_click(self, event):
+        if self.engine.game_over:
+            return
+
         # Get the number that was clicked on and save it in the next guess slot.
         tag = self.canvas.gettags("current")[0]
         digit = int(tag[3])  # strip off prefix 'tag'
@@ -164,7 +150,7 @@ class Mastermind_Game:
 
         if (len(self.current_guess) < 4):
             self.current_guess.append(digit)
-            self.draw_digit(len(self.current_guess)-1, digit)
+            self.draw_digit(len(self.current_guess)-1, digit, len(self.engine.history))  # Draw the digit in the next available slot
 
         # After 4 numbers have been selected, see if the user guessed correctly
         if len(self.current_guess) == 4: 
@@ -172,9 +158,9 @@ class Mastermind_Game:
 
     # Function to reset the game and start a new one
     def play_game(self):
+        self.engine.reset_game()
         self.clear_numpad()
         self.clear_guess_grid()
-        self.create_code()
 
     def run(self):
         self.app.mainloop()
